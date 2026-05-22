@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Biblioteca Pedagógica N°1 "Pueblo de Rawson"</title>
+  <meta name="description" content="Biblioteca Pedagógica N°1 Pueblo de Rawson, Chubut."/>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script>
+    firebase.initializeApp({
+      apiKey:"AIzaSyDYj7oWx2eo1PuWYYMxT9sQppCVVsjXvLk",
+      authDomain:"webbp1rw.firebaseapp.com",
+      projectId:"webbp1rw",
+      storageBucket:"webbp1rw.firebasestorage.app",
+      messagingSenderId:"210033016109",
+      appId:"1:210033016109:web:5a6506850d9c26256fe7a4"
+    });
+    window._db=firebase.firestore();
+  </script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html{scroll-behavior:smooth;}
+    body{font-family:'Segoe UI',sans-serif;overflow-x:hidden;}
+    @keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const {useState,useEffect,useRef}=React;
+const C={magenta:"#C0399A",celeste:"#3BBCD4",amarillo:"#F5C800",naranja:"#E85D1A",verde:"#2E8B3A",light:"#fdf6ff",dark:"#1a1a2e"};
+const ADMIN_PASS="bp1rawson";
+const NAV=["Inicio","Nosotros","Novedades","Galería","Agenda","Equipo","Catálogo","Repositorio","Recursos Web","Contacto"];
+const ROLES_DEFAULT=["Directora","Bibliotecaria","Auxiliar Administrativo","Auxiliar","Docente","Otro"];
+const ROLE_C={"Directora":C.magenta,"Bibliotecaria":C.celeste,"Auxiliar Administrativo":C.naranja,"Auxiliar":C.verde,"Docente":C.celeste,"Otro":C.amarillo};
+const AREAS=["Lengua","Matemática","Ciencias Sociales","Ciencias Naturales","Pedagógico","Arte","Educación Física","Otro"];
+const CAT_C={"Plan de Alfabetización Inicial":C.verde,"Bibliotecas":C.celeste,"Mediación para la Lectura":C.naranja,"Inteligencia Artificial":C.magenta,"Formación docente":C.amarillo,"Normativa":"#6366f1","Efemérides":"#e11d48"};
+const RCATS=["Todas","Plan de Alfabetización Inicial","Bibliotecas","Mediación para la Lectura","Inteligencia Artificial","Formación docente","Normativa","Efemérides"];
+const RCAT_C={"Plan de Alfabetización Inicial":C.verde,"Bibliotecas":C.celeste,"Mediación para la Lectura":C.naranja,"Inteligencia Artificial":C.magenta,"Formación docente":C.amarillo,"Normativa":"#6366f1","Efemérides":"#e11d48"};
+const GCATS=["Todas","Instalaciones","Actividades","Eventos","Equipo"];
+const MESES_ORDEN=["ENE","FEB","MAR","ABR","MAY","JUN","JUL","AGO","SEP","OCT","NOV","DIC"];
+const EVENTO_COLORS=[C.magenta,C.celeste,C.naranja,C.verde,C.amarillo];
+const GITHUB_GALERIA_CATS={"Instalaciones":"instalaciones","Actividades":"actividades","Eventos":"eventos","Equipo":"equipo"};
+
+// Carpetas del repositorio por categoría
+const REPO_CATS={
+  "Plan de Alfabetización Inicial":"alfabetizacion",
+  "Bibliotecas":"bibliotecas",
+  "Mediación para la Lectura":"mediacion",
+  "Inteligencia Artificial":"inteligencia-artificial",
+  "Formación docente":"formacion-docente",
+  "Normativa":"normativa",
+  "Efemérides":"efemerides",
+};
+
+const NOTICIAS=[
+  {id:1,color:C.celeste,icon:"📚",titulo:"Nuevas adquisiciones 2026",desc:"Incorporamos más de 50 nuevos títulos pedagógicos y literarios. ¡Vení a explorarlos!",fecha:"Mayo 2026"},
+  {id:2,color:C.naranja,icon:"🎨",titulo:"Día Nacional del Libro",desc:"Presentación del libro ....",fecha:"Junio 2026"},
+  {id:3,color:C.verde,icon:"📖",titulo:"Maratón Nacional de Lectura",desc:"Del futuro al más allá: cuando la literatura imagina otros mundos posibles",fecha:"Octubre 2026"},
+  {id:4,color:C.magenta,icon:"🏫",titulo:"Visitas guiadas",desc:"Coordiná la visita de tu escuela. Ofrecemos recorridos guiados y actividades didácticas.",fecha:"Marzo a noviembre"},
+];
+const EQUIPO_INIT=[
+  {id:1,nombre:"Elina Mortentsen",rol:"Directora",color:C.magenta},
+  {id:2,nombre:"Romina Giménez",rol:"Bibliotecaria",color:C.celeste},
+  {id:3,nombre:"Vanesa Pelegri",rol:"Bibliotecaria",color:C.celeste},
+  {id:4,nombre:"Paola Sardón",rol:"Auxiliar Administrativo",color:C.naranja},
+  {id:5,nombre:"Vanesa Beltrán",rol:"Auxiliar",color:C.verde},
+  {id:6,nombre:"Sofía Caileo",rol:"Auxiliar",color:C.amarillo},
+  {id:7,nombre:"Tamara Sayegh",rol:"Auxiliar",color:C.magenta},
+  {id:8,nombre:"Gloria Silva",rol:"Auxiliar",color:C.naranja},
+  {id:9,nombre:"Bruno Valenzuela",rol:"Auxiliar",color:C.verde},
+  {id:10,nombre:"Carolina Rocha",rol:"Docente",color:C.celeste},
+];
+const EVENTOS_INIT=[
+  {id:1,dia:"15",mes:"JUN",titulo:"Día del Libro",hora:"",lugar:"",color:C.celeste},
+  {id:2,dia:"03",mes:"JUL",titulo:"Vacaciones de invierno",hora:"",lugar:"",color:C.amarillo},
+  {id:3,dia:"4 y 5",mes:"SEP",titulo:"Feria del Libro Rawson",hora:"10:00 hs",lugar:"Gimnasio Escuelas N° 4 y 752",color:C.magenta},
+  {id:4,dia:"23 y 24",mes:"OCT",titulo:"Seminario Semillero de Saberes y Sentires",hora:"",lugar:"Escuela N° 4",color:C.amarillo},
+];
+const INC_INIT=[
+  {id:1,titulo:"Didáctica de la lengua en el nivel primario",autor:"Delia Lerner",anio:"2024",area:"Lengua"},
+  {id:2,titulo:"Matemática para maestros",autor:"Brousseau",anio:"2024",area:"Matemática"},
+  {id:3,titulo:"El juego como estrategia pedagógica",autor:"Varios autores",anio:"2025",area:"Pedagógico"},
+];
+const RECURSOS_INIT=[
+  {id:1,titulo:"Ministerio de Educación de la Nación",desc:"Portal oficial con recursos, normativas y programas educativos nacionales.",url:"https://www.argentina.gob.ar/educacion",categoria:"Normativa"},
+  {id:2,titulo:"Educ.ar",desc:"Plataforma educativa digital con recursos para docentes y estudiantes.",url:"https://www.educ.ar",categoria:"Formación docente"},
+  {id:3,titulo:"Plan Nacional de Alfabetización",desc:"Información y recursos del plan nacional para la alfabetización inicial.",url:"https://www.argentina.gob.ar/educacion/alfabetizacion",categoria:"Plan de Alfabetización Inicial"},
+  {id:4,titulo:"El grito sagrado: un chat sobre el Himno",desc:"Recurso de educ.ar que propone una experiencia creativa e interactiva para trabajar el Himno Nacional Argentino en el aula.",url:"https://www.educ.ar/recursos/159194/el-grito-sagrado-un-chat-sobre-el-himno",categoria:"Mediación para la Lectura"},
+];
+
+async function fbGuardar(col,datos){try{await window._db.collection("bp1").doc(col).set(datos);}catch(e){console.error(e);}}
+async function fbLeer(col){try{const s=await window._db.collection("bp1").doc(col).get();return s.exists?s.data():null;}catch(e){return null;}}
+
+function ordenarEventos(evs){
+  return [...evs].sort((a,b)=>{
+    const ma=MESES_ORDEN.indexOf(a.mes.toUpperCase());
+    const mb=MESES_ORDEN.indexOf(b.mes.toUpperCase());
+    if(ma!==mb)return ma-mb;
+    return (parseInt(a.dia)||0)-(parseInt(b.dia)||0);
+  });
+}
+function useInView(ref){
+  const [v,setV]=useState(false);
+  useEffect(()=>{
+    const obs=new IntersectionObserver(([e])=>{if(e.isIntersecting)setV(true);},{threshold:0.1});
+    if(ref.current)obs.observe(ref.current);
+    return()=>obs.disconnect();
+  },[]);
+  return v;
+}
+function Section({id,children,bg="#fff"}){
+  const ref=useRef();const v=useInView(ref);
+  return(<section id={id} ref={ref} style={{background:bg,padding:"60px 20px",opacity:v?1:0,transform:v?"translateY(0)":"translateY(40px)",transition:"opacity 0.7s ease,transform 0.7s ease"}}><div style={{maxWidth:1000,margin:"0 auto"}}>{children}</div></section>);
+}
+function Title({text,color}){
+  return(<div style={{textAlign:"center",marginBottom:36}}><h2 style={{fontSize:32,fontWeight:800,color,margin:0}}>{text}</h2><div style={{width:60,height:4,background:color,margin:"10px auto 0",borderRadius:2}}/></div>);
+}
+function Inp({style,...p}){return <input style={{width:"100%",border:"1px solid #ddd",borderRadius:10,padding:"10px 14px",fontSize:14,outline:"none",boxSizing:"border-box",...style}} {...p}/>;}
+function Btn({col,children,style,...p}){return <button style={{background:col,color:col==="#eee"?"#555":"#fff",border:"none",borderRadius:10,padding:"11px",fontWeight:700,cursor:"pointer",width:"100%",...style}} {...p}>{children}</button>;}
+function Logo({size=48}){
+  return <img src="https://raw.githubusercontent.com/bip1rw-droid/Logo-BP1/main/Logo%20BP1.png" alt="Logo BP1" style={{width:size,height:size,borderRadius:"50%",objectFit:"cover",border:`2px solid ${C.magenta}`}}/>;
+}
+function AdminShell({titulo,subtitulo,gradiente,onClose,children}){
+  const [pass,setPass]=useState("");const [auth,setAuth]=useState(false);const [err,setErr]=useState("");
+  const login=()=>{if(pass===ADMIN_PASS){setAuth(true);setErr("");}else setErr("Contraseña incorrecta.");};
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div style={{background:"#fff",borderRadius:20,width:"100%",maxWidth:540,maxHeight:"90vh",overflowY:"auto",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+        <div style={{background:gradiente,padding:"22px 24px",borderRadius:"20px 20px 0 0",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div><div style={{color:"#fff",fontWeight:900,fontSize:18}}>{titulo}</div><div style={{color:"rgba(255,255,255,0.85)",fontSize:13}}>{subtitulo}</div></div>
+          <button onClick={onClose} style={{background:"rgba(255,255,255,0.2)",border:"none",color:"#fff",borderRadius:"50%",width:34,height:34,cursor:"pointer",fontSize:18,fontWeight:700}}>×</button>
+        </div>
+        <div style={{padding:24}}>
+          {!auth?(<div><p style={{color:"#555",marginBottom:16,fontSize:14}}>Ingresá la contraseña para acceder al panel.</p><Inp type="password" placeholder="Contraseña" value={pass} onChange={e=>setPass(e.target.value)} onKeyDown={e=>e.key==="Enter"&&login()} style={{marginBottom:8}}/>{err&&<div style={{color:"red",fontSize:13,marginBottom:8}}>{err}</div>}<Btn col={C.magenta} onClick={login}>Ingresar</Btn></div>):(<div>{children()}</div>)}
+        </div>
+      </div>
+    </div>
+  );
+}
+function AdminEquipo({equipo,onClose,onSave}){
+  const [lista,setLista]=useState(equipo.map(m=>({...m})));
+  const [roles,setRoles]=useState(ROLES_DEFAULT);
+  const [modo,setModo]=useState(null);const [editId,setEditId]=useState(null);
+  const [form,setForm]=useState({nombre:"",rol:"Auxiliar"});
+  const [nuevoRol,setNuevoRol]=useState("");const [mostrarNuevoRol,setMostrarNuevoRol]=useState(false);
+  const [confirmDel,setConfirmDel]=useState(null);
+  const agregarRol=()=>{const r=nuevoRol.trim();if(!r||roles.includes(r))return;setRoles([...roles,r]);setForm({...form,rol:r});setNuevoRol("");setMostrarNuevoRol(false);};
+  const iniciarEditar=m=>{setEditId(m.id);setForm({nombre:m.nombre,rol:m.rol});setModo("editar");setMostrarNuevoRol(false);};
+  const iniciarAgregar=()=>{setEditId(null);setForm({nombre:"",rol:roles[0]});setModo("agregar");setMostrarNuevoRol(false);};
+  const guardar=()=>{if(!form.nombre.trim())return;const col=ROLE_C[form.rol]||C.verde;if(modo==="editar")setLista(lista.map(m=>m.id===editId?{...m,...form,color:col}:m));else setLista([...lista,{id:Date.now(),...form,color:col}]);setModo(null);};
+  const eliminar=id=>{setLista(lista.filter(m=>m.id!==id));setConfirmDel(null);};
+  return(
+    <AdminShell titulo="🔐 Equipo de trabajo" subtitulo="Administrar integrantes y roles" gradiente={`linear-gradient(135deg,${C.magenta},${C.celeste})`} onClose={onClose}>
+      {()=>(<div>
+        {modo&&(<div style={{background:C.light,borderRadius:14,padding:18,marginBottom:20}}>
+          <div style={{fontWeight:700,color:C.magenta,marginBottom:12}}>{modo==="agregar"?"➕ Agregar":"✏️ Editar"}</div>
+          <Inp placeholder="Nombre completo" value={form.nombre} onChange={e=>setForm({...form,nombre:e.target.value})} style={{marginBottom:10}}/>
+          <select value={form.rol} onChange={e=>setForm({...form,rol:e.target.value})} style={{width:"100%",border:"1px solid #ddd",borderRadius:10,padding:"10px 14px",fontSize:14,marginBottom:10}}>{roles.map(r=><option key={r}>{r}</option>)}</select>
+          {!mostrarNuevoRol?(<button onClick={()=>setMostrarNuevoRol(true)} style={{background:"none",border:`1px dashed ${C.celeste}`,color:C.celeste,borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:700,cursor:"pointer",marginBottom:12,width:"100%"}}>➕ Agregar nuevo rol</button>):(<div style={{display:"flex",gap:8,marginBottom:12}}><Inp placeholder="Nombre del nuevo rol..." value={nuevoRol} onChange={e=>setNuevoRol(e.target.value)} onKeyDown={e=>e.key==="Enter"&&agregarRol()} style={{marginBottom:0}}/><button onClick={agregarRol} style={{background:C.celeste,color:"#fff",border:"none",borderRadius:10,padding:"0 14px",fontWeight:700,cursor:"pointer",flexShrink:0}}>OK</button><button onClick={()=>setMostrarNuevoRol(false)} style={{background:"#eee",color:"#555",border:"none",borderRadius:10,padding:"0 10px",cursor:"pointer",flexShrink:0}}>✕</button></div>)}
+          <div style={{display:"flex",gap:10}}><Btn col={C.verde} onClick={guardar}>Guardar</Btn><Btn col="#eee" onClick={()=>setModo(null)}>Cancelar</Btn></div>
+        </div>)}
+        <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:16}}>
+          {lista.map(m=>(<div key={m.id} style={{display:"flex",alignItems:"center",gap:12,background:"#f9f9f9",borderRadius:12,padding:"10px 14px",borderLeft:`4px solid ${m.color}`}}>
+            <div style={{width:36,height:36,borderRadius:"50%",background:m.color,color:"#fff",fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{m.nombre[0]}</div>
+            <div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,fontSize:14,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.nombre}</div><div style={{fontSize:12,color:m.color}}>{m.rol}</div></div>
+            <div style={{display:"flex",gap:6}}><button onClick={()=>iniciarEditar(m)} style={{background:C.celeste+"22",color:C.celeste,border:"none",borderRadius:8,padding:"5px 10px",cursor:"pointer",fontWeight:700}}>✏️</button><button onClick={()=>setConfirmDel(m.id)} style={{background:"#fee2e2",color:"#ef4444",border:"none",borderRadius:8,padding:"5px 10px",cursor:"pointer",fontWeight:700}}>🗑️</button></div>
+          </div>))}
+        </div>
+        {confirmDel&&(<div style={{background:"#fff5f5",border:"1px solid #fecaca",borderRadius:12,padding:16,marginBottom:16,textAlign:"center"}}><div style={{fontWeight:700,color:"#ef4444",marginBottom:10}}>¿Eliminar este integrante?</div><div style={{display:"flex",gap:10,justifyContent:"center"}}><button onClick={()=>eliminar(confirmDel)} style={{background:"#ef4444",color:"#fff",border:"none",borderRadius:8,padding:"8px 20px",fontWeight:700,cursor:"pointer"}}>Sí</button><button onClick={()=>setConfirmDel(null)} style={{background:"#eee",color:"#555",border:"none",borderRadius:8,padding:"8px 20px",fontWeight:700,cursor:"pointer"}}>No</button></div></div>)}
+        {!modo&&<Btn col={C.magenta} onClick={iniciarAgregar} style={{marginBottom:10}}>➕ Agregar integrante</Btn>}
+        <Btn col={C.verde} onClick={()=>onSave(lista)}>✅ Guardar y publicar</Btn>
+      </div>)}
+    </AdminShell>
+  );
+}
+function AdminEventos({eventos,onClose,onSave}){
+  const [lista,setLista]=useState(ordenarEventos(eventos.map(e=>({...e}))));
+  const [modo,setModo]=useState(null);const [editId,setEditId]=useState(null);
+  const [form,setForm]=useState({dia:"",mes:"ENE",titulo:"",hora:"",lugar:"",color:C.magenta});
+  const [confirmDel,setConfirmDel]=useState(null);
+  const iniciarEditar=ev=>{setEditId(ev.id);setForm({dia:ev.dia,mes:ev.mes,titulo:ev.titulo,hora:ev.hora,lugar:ev.lugar,color:ev.color});setModo("editar");};
+  const iniciarAgregar=()=>{setEditId(null);setForm({dia:"",mes:"ENE",titulo:"",hora:"",lugar:"",color:C.magenta});setModo("agregar");};
+  const guardar=()=>{if(!form.titulo.trim()||!form.dia.trim())return;let nueva;if(modo==="editar")nueva=lista.map(e=>e.id===editId?{...e,...form}:e);else nueva=[...lista,{id:Date.now(),...form}];setLista(ordenarEventos(nueva));setModo(null);};
+  const eliminar=id=>{setLista(ordenarEventos(lista.filter(e=>e.id!==id)));setConfirmDel(null);};
+  return(
+    <AdminShell titulo="📅 Agenda de Eventos" subtitulo="Se ordenan automáticamente por fecha" gradiente={`linear-gradient(135deg,${C.verde},${C.celeste})`} onClose={onClose}>
+      {()=>(<div>
+        {modo&&(<div style={{background:C.light,borderRadius:14,padding:18,marginBottom:20}}>
+          <div style={{fontWeight:700,color:C.verde,marginBottom:12}}>{modo==="agregar"?"➕ Nuevo evento":"✏️ Editar evento"}</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+            <div><label style={{fontSize:11,fontWeight:700,color:"#666",display:"block",marginBottom:4}}>DÍA</label><Inp placeholder="Ej: 22" value={form.dia} onChange={e=>setForm({...form,dia:e.target.value})}/></div>
+            <div><label style={{fontSize:11,fontWeight:700,color:"#666",display:"block",marginBottom:4}}>MES</label><select value={form.mes} onChange={e=>setForm({...form,mes:e.target.value})} style={{width:"100%",border:"1px solid #ddd",borderRadius:10,padding:"10px 14px",fontSize:14}}>{MESES_ORDEN.map(m=><option key={m}>{m}</option>)}</select></div>
+          </div>
+          <Inp placeholder="Título del evento" value={form.titulo} onChange={e=>setForm({...form,titulo:e.target.value})} style={{marginBottom:10}}/>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}><Inp placeholder="10:00 hs (opcional)" value={form.hora} onChange={e=>setForm({...form,hora:e.target.value})}/><Inp placeholder="Lugar (opcional)" value={form.lugar} onChange={e=>setForm({...form,lugar:e.target.value})}/></div>
+          <label style={{fontSize:11,fontWeight:700,color:"#666",display:"block",marginBottom:6}}>COLOR</label>
+          <div style={{display:"flex",gap:8,marginBottom:14}}>{EVENTO_COLORS.map(col=><div key={col} onClick={()=>setForm({...form,color:col})} style={{width:28,height:28,borderRadius:"50%",background:col,cursor:"pointer",border:form.color===col?"3px solid #333":"3px solid transparent"}}/>)}</div>
+          <div style={{display:"flex",gap:10}}><Btn col={C.verde} onClick={guardar}>Guardar</Btn><Btn col="#eee" onClick={()=>setModo(null)}>Cancelar</Btn></div>
+        </div>)}
+        <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:16}}>
+          {lista.map(ev=>(<div key={ev.id} style={{display:"flex",alignItems:"center",gap:12,background:"#f9f9f9",borderRadius:12,padding:"10px 14px",borderLeft:`4px solid ${ev.color}`}}>
+            <div style={{background:ev.color,color:"#fff",borderRadius:10,padding:"6px 10px",textAlign:"center",minWidth:52,fontWeight:900,flexShrink:0}}><div style={{fontSize:15}}>{ev.dia}</div><div style={{fontSize:10}}>{ev.mes}</div></div>
+            <div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,fontSize:13,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ev.titulo}</div><div style={{fontSize:11,color:"#888"}}>{ev.hora}{ev.hora&&ev.lugar?" · ":""}{ev.lugar}</div></div>
+            <div style={{display:"flex",gap:6}}><button onClick={()=>iniciarEditar(ev)} style={{background:C.celeste+"22",color:C.celeste,border:"none",borderRadius:8,padding:"5px 10px",cursor:"pointer",fontWeight:700}}>✏️</button><button onClick={()=>setConfirmDel(ev.id)} style={{background:"#fee2e2",color:"#ef4444",border:"none",borderRadius:8,padding:"5px 10px",cursor:"pointer",fontWeight:700}}>🗑️</button></div>
+          </div>))}
+        </div>
+        {confirmDel&&(<div style={{background:"#fff5f5",border:"1px solid #fecaca",borderRadius:12,padding:16,marginBottom:16,textAlign:"center"}}><div style={{fontWeight:700,color:"#ef4444",marginBottom:10}}>¿Eliminar este evento?</div><div style={{display:"flex",gap:10,justifyContent:"center"}}><button onClick={()=>eliminar(confirmDel)} style={{background:"#ef4444",color:"#fff",border:"none",borderRadius:8,padding:"8px 20px",fontWeight:700,cursor:"pointer"}}>Sí</button><button onClick={()=>setConfirmDel(null)} style={{background:"#eee",color:"#555",border:"none",borderRadius:8,padding:"8px 20px",fontWeight:700,cursor:"pointer"}}>No</button></div></div>)}
+        {!modo&&<Btn col={C.verde} onClick={iniciarAgregar} style={{marginBottom:10}}>➕ Agregar evento</Btn>}
+        <Btn col={C.naranja} onClick={()=>onSave(lista)}>✅ Guardar y publicar</Btn>
+      </div>)}
+    </AdminShell>
+  );
+}
+function AdminInc({lista,onClose,onSave}){
+  const [items,setItems]=useState(lista.map(i=>({...i})));
+  const [modo,setModo]=useState(null);const [editId,setEditId]=useState(null);
+  const [form,setForm]=useState({titulo:"",autor:"",anio:new Date().getFullYear().toString(),area:"Lengua"});
+  const [confirmDel,setConfirmDel]=useState(null);
+  const iniciarEditar=item=>{setEditId(item.id);setForm({titulo:item.titulo,autor:item.autor,anio:item.anio,area:item.area});setModo("editar");};
+  const iniciarAgregar=()=>{setEditId(null);setForm({titulo:"",autor:"",anio:new Date().getFullYear().toString(),area:"Lengua"});setModo("agregar");};
+  const guardar=()=>{if(!form.titulo.trim())return;if(modo==="editar")setItems(items.map(i=>i.id===editId?{...i,...form}:i));else setItems([{id:Date.now(),...form},...items]);setModo(null);};
+  const eliminar=id=>{setItems(items.filter(i=>i.id!==id));setConfirmDel(null);};
+  return(
+    <AdminShell titulo="🆕 Nuevas Incorporaciones" subtitulo="Administrar títulos recientes" gradiente={`linear-gradient(135deg,${C.celeste},${C.verde})`} onClose={onClose}>
+      {()=>(<div>
+        {modo&&(<div style={{background:C.light,borderRadius:14,padding:18,marginBottom:20}}>
+          <div style={{fontWeight:700,color:C.celeste,marginBottom:12}}>{modo==="agregar"?"➕ Agregar título":"✏️ Editar título"}</div>
+          <Inp placeholder="Título del libro" value={form.titulo} onChange={e=>setForm({...form,titulo:e.target.value})} style={{marginBottom:10}}/>
+          <Inp placeholder="Autor/a" value={form.autor} onChange={e=>setForm({...form,autor:e.target.value})} style={{marginBottom:10}}/>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}><Inp placeholder="Año" value={form.anio} onChange={e=>setForm({...form,anio:e.target.value})}/><select value={form.area} onChange={e=>setForm({...form,area:e.target.value})} style={{width:"100%",border:"1px solid #ddd",borderRadius:10,padding:"10px 14px",fontSize:14}}>{AREAS.map(a=><option key={a}>{a}</option>)}</select></div>
+          <div style={{display:"flex",gap:10,marginTop:10}}><Btn col={C.verde} onClick={guardar}>Guardar</Btn><Btn col="#eee" onClick={()=>setModo(null)}>Cancelar</Btn></div>
+        </div>)}
+        <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:16}}>
+          {items.map(item=>(<div key={item.id} style={{display:"flex",alignItems:"center",gap:12,background:"#f9f9f9",borderRadius:12,padding:"10px 14px",borderLeft:`4px solid ${C.celeste}`}}>
+            <div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,fontSize:13,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.titulo}</div><div style={{fontSize:12,color:"#888"}}>{item.autor} · {item.area} · {item.anio}</div></div>
+            <div style={{display:"flex",gap:6}}><button onClick={()=>iniciarEditar(item)} style={{background:C.celeste+"22",color:C.celeste,border:"none",borderRadius:8,padding:"5px 10px",cursor:"pointer",fontWeight:700}}>✏️</button><button onClick={()=>setConfirmDel(item.id)} style={{background:"#fee2e2",color:"#ef4444",border:"none",borderRadius:8,padding:"5px 10px",cursor:"pointer",fontWeight:700}}>🗑️</button></div>
+          </div>))}
+        </div>
+        {confirmDel&&(<div style={{background:"#fff5f5",border:"1px solid #fecaca",borderRadius:12,padding:16,marginBottom:16,textAlign:"center"}}><div style={{fontWeight:700,color:"#ef4444",marginBottom:10}}>¿Eliminar este título?</div><div style={{display:"flex",gap:10,justifyContent:"center"}}><button onClick={()=>eliminar(confirmDel)} style={{background:"#ef4444",color:"#fff",border:"none",borderRadius:8,padding:"8px 20px",fontWeight:700,cursor:"pointer"}}>Sí</button><button onClick={()=>setConfirmDel(null)} style={{background:"#eee",color:"#555",border:"none",borderRadius:8,padding:"8px 20px",fontWeight:700,cursor:"pointer"}}>No</button></div></div>)}
+        {!modo&&<Btn col={C.celeste} onClick={iniciarAgregar} style={{marginBottom:10}}>➕ Agregar título</Btn>}
+        <Btn col={C.verde} onClick={()=>onSave(items)}>✅ Guardar y publicar</Btn>
+      </div>)}
+    </AdminShell>
+  );
+}
+function AdminRecursos({lista,onClose,onSave}){
+  const [items,setItems]=useState(lista.map(i=>({...i})));
+  const [modo,setModo]=useState(null);const [editId,setEditId]=useState(null);
+  const [form,setForm]=useState({titulo:"",desc:"",url:"",categoria:"Formación docente"});
+  const [confirmDel,setConfirmDel]=useState(null);
+  const iniciarEditar=item=>{setEditId(item.id);setForm({titulo:item.titulo,desc:item.desc,url:item.url,categoria:item.categoria});setModo("editar");};
+  const iniciarAgregar=()=>{setEditId(null);setForm({titulo:"",desc:"",url:"",categoria:"Formación docente"});setModo("agregar");};
+  const guardar=()=>{if(!form.titulo.trim()||!form.url.trim())return;if(modo==="editar")setItems(items.map(i=>i.id===editId?{...i,...form}:i));else setItems([...items,{id:Date.now(),...form}]);setModo(null);};
+  const eliminar=id=>{setItems(items.filter(i=>i.id!==id));setConfirmDel(null);};
+  return(
+    <AdminShell titulo="🌐 Recursos Web" subtitulo="Agregar, editar o eliminar links externos" gradiente={`linear-gradient(135deg,${C.celeste},${C.magenta})`} onClose={onClose}>
+      {()=>(<div>
+        {modo&&(<div style={{background:C.light,borderRadius:14,padding:18,marginBottom:20}}>
+          <div style={{fontWeight:700,color:C.celeste,marginBottom:12}}>{modo==="agregar"?"➕ Agregar recurso":"✏️ Editar recurso"}</div>
+          <Inp placeholder="Título del recurso" value={form.titulo} onChange={e=>setForm({...form,titulo:e.target.value})} style={{marginBottom:10}}/>
+          <Inp placeholder="Descripción breve" value={form.desc} onChange={e=>setForm({...form,desc:e.target.value})} style={{marginBottom:10}}/>
+          <Inp placeholder="URL (https://...)" value={form.url} onChange={e=>setForm({...form,url:e.target.value})} style={{marginBottom:10}}/>
+          <select value={form.categoria} onChange={e=>setForm({...form,categoria:e.target.value})} style={{width:"100%",border:"1px solid #ddd",borderRadius:10,padding:"10px 14px",fontSize:14,marginBottom:10}}>{RCATS.filter(c=>c!=="Todas").map(c=><option key={c}>{c}</option>)}</select>
+          <div style={{display:"flex",gap:10}}><Btn col={C.verde} onClick={guardar}>Guardar</Btn><Btn col="#eee" onClick={()=>setModo(null)}>Cancelar</Btn></div>
+        </div>)}
+        <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:16}}>
+          {items.map(item=>{const col=RCAT_C[item.categoria]||C.celeste;return(<div key={item.id} style={{display:"flex",alignItems:"center",gap:12,background:"#f9f9f9",borderRadius:12,padding:"10px 14px",borderLeft:`4px solid ${col}`}}>
+            <div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,fontSize:13,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.titulo}</div><div style={{fontSize:11,color:"#888",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.url}</div><div style={{fontSize:11,color:col,fontWeight:600}}>{item.categoria}</div></div>
+            <div style={{display:"flex",gap:6,flexShrink:0}}><button onClick={()=>iniciarEditar(item)} style={{background:C.celeste+"22",color:C.celeste,border:"none",borderRadius:8,padding:"5px 10px",cursor:"pointer",fontWeight:700}}>✏️</button><button onClick={()=>setConfirmDel(item.id)} style={{background:"#fee2e2",color:"#ef4444",border:"none",borderRadius:8,padding:"5px 10px",cursor:"pointer",fontWeight:700}}>🗑️</button></div>
+          </div>);})}
+        </div>
+        {confirmDel&&(<div style={{background:"#fff5f5",border:"1px solid #fecaca",borderRadius:12,padding:16,marginBottom:16,textAlign:"center"}}><div style={{fontWeight:700,color:"#ef4444",marginBottom:10}}>¿Eliminar este recurso?</div><div style={{display:"flex",gap:10,justifyContent:"center"}}><button onClick={()=>eliminar(confirmDel)} style={{background:"#ef4444",color:"#fff",border:"none",borderRadius:8,padding:"8px 20px",fontWeight:700,cursor:"pointer"}}>Sí</button><button onClick={()=>setConfirmDel(null)} style={{background:"#eee",color:"#555",border:"none",borderRadius:8,padding:"8px 20px",fontWeight:700,cursor:"pointer"}}>No</button></div></div>)}
+        {!modo&&<Btn col={C.celeste} onClick={iniciarAgregar} style={{marginBottom:10}}>➕ Agregar recurso</Btn>}
+        <Btn col={C.verde} onClick={()=>onSave(items)}>✅ Guardar y publicar</Btn>
+      </div>)}
+    </AdminShell>
+  );
+}
+function formatTitulo(n){return n.replace(/\.[^.]+$/,"").replace(/[-_]/g," ").replace(/\b\w/g,l=>l.toUpperCase());}
+function GaleriaSection(){
+  const [cat,setCat]=useState("Todas");const [fotos,setFotos]=useState([]);const [cargando,setCargando]=useState(true);const [idx,setIdx]=useState(0);
+  useEffect(()=>{
+    const fetchCat=async(nombre,carpeta)=>{try{const r=await fetch(`https://api.github.com/repos/bip1rw-droid/galeria-bp1/contents/${carpeta}`);const data=await r.json();if(!Array.isArray(data))return[];return data.filter(f=>/\.(jpe?g|png|gif|webp)$/i.test(f.name)).map(f=>({id:f.sha,url:`https://raw.githubusercontent.com/bip1rw-droid/galeria-bp1/main/${carpeta}/${f.name}`,titulo:formatTitulo(f.name),categoria:nombre}));}catch{return[];}};
+    Promise.all(Object.entries(GITHUB_GALERIA_CATS).map(([n,c])=>fetchCat(n,c))).then(res=>{setFotos(res.flat());setCargando(false);});
+  },[]);
+  const filtradas=cat==="Todas"?fotos:fotos.filter(f=>f.categoria===cat);
+  useEffect(()=>setIdx(0),[cat]);
+  const prev=()=>setIdx(i=>(i-1+filtradas.length)%filtradas.length);
+  const next=()=>setIdx(i=>(i+1)%filtradas.length);
+  if(cargando)return<div style={{textAlign:"center",padding:60}}><div style={{fontSize:48}}>⏳</div><div style={{color:"#888",fontWeight:600,marginTop:12}}>Cargando galería...</div></div>;
+  if(fotos.length===0)return(<div style={{textAlign:"center",padding:60,background:"#fff",borderRadius:20,boxShadow:"0 4px 20px rgba(0,0,0,0.07)"}}><div style={{fontSize:64,marginBottom:16}}>📷</div><div style={{fontWeight:800,color:C.dark,fontSize:18,marginBottom:8}}>La galería está lista</div><div style={{color:"#888",fontSize:14,maxWidth:440,margin:"0 auto",lineHeight:1.7}}>Subí fotos al repositorio <strong>galeria-bp1</strong> en GitHub dentro de las carpetas correspondientes.<br/><span style={{color:C.naranja}}>El nombre del archivo será el título.</span></div></div>);
+  return(<div>
+    <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center",marginBottom:24}}>{GCATS.map(c=>(<button key={c} onClick={()=>setCat(c)} style={{background:cat===c?C.naranja:"#fff",color:cat===c?"#fff":"#555",border:`2px solid ${C.naranja}`,borderRadius:30,padding:"7px 18px",fontWeight:700,fontSize:13,cursor:"pointer"}}>{c}{c!=="Todas"?` (${fotos.filter(f=>f.categoria===c).length})`:""}</button>))}</div>
+    {filtradas.length===0&&<div style={{textAlign:"center",padding:40,color:"#aaa"}}>No hay fotos en esta categoría todavía.</div>}
+    {filtradas.length>0&&(<div style={{position:"relative",borderRadius:20,overflow:"hidden",boxShadow:"0 8px 32px rgba(0,0,0,0.18)"}}>
+      <img src={filtradas[idx]?.url} alt={filtradas[idx]?.titulo} style={{width:"100%",height:460,objectFit:"cover",display:"block"}} loading="lazy"/>
+      <div style={{position:"absolute",bottom:0,left:0,right:0,background:"linear-gradient(transparent,rgba(0,0,0,0.78))",padding:"50px 28px 22px"}}><div style={{color:"#fff",fontWeight:800,fontSize:20,marginBottom:4}}>{filtradas[idx]?.titulo}</div><div style={{color:"rgba(255,255,255,0.7)",fontSize:13}}>{filtradas[idx]?.categoria} · {idx+1} / {filtradas.length}</div></div>
+      <button onClick={prev} style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,0.35)",border:"none",color:"#fff",borderRadius:"50%",width:46,height:46,fontSize:24,cursor:"pointer"}}>‹</button>
+      <button onClick={next} style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,0.35)",border:"none",color:"#fff",borderRadius:"50%",width:46,height:46,fontSize:24,cursor:"pointer"}}>›</button>
+      <div style={{position:"absolute",bottom:16,right:20,display:"flex",gap:6}}>{filtradas.map((_,i)=>(<div key={i} onClick={()=>setIdx(i)} style={{width:i===idx?22:8,height:8,borderRadius:4,background:i===idx?"#fff":"rgba(255,255,255,0.45)",cursor:"pointer",transition:"all 0.3s"}}/>))}</div>
+    </div>)}
+    {filtradas.length>1&&(<div style={{display:"flex",gap:10,marginTop:14,overflowX:"auto",paddingBottom:6}}>{filtradas.map((f,i)=>(<img key={f.id} src={f.url} alt={f.titulo} onClick={()=>setIdx(i)} style={{width:80,height:60,objectFit:"cover",borderRadius:10,cursor:"pointer",flexShrink:0,border:i===idx?`3px solid ${C.naranja}`:"3px solid transparent",opacity:i===idx?1:0.55,transition:"all 0.2s"}} loading="lazy"/>))}</div>)}
+  </div>);
+}
+
+// ── Repositorio con categorías colapsables y carpetas en GitHub ──
+function Repositorio(){
+  const [catAbierta,setCatAbierta]=useState(null);
+  const [docsPorCat,setDocsPorCat]=useState({});
+  const [cargandoCat,setCargandoCat]=useState({});
+  const [docActivo,setDocActivo]=useState(null);
+
+  const abrirCat=async(cat)=>{
+    if(catAbierta===cat){setCatAbierta(null);setDocActivo(null);return;}
+    setCatAbierta(cat);setDocActivo(null);
+    if(docsPorCat[cat]!==undefined)return;
+    setCargandoCat(p=>({...p,[cat]:true}));
+    const carpeta=REPO_CATS[cat];
+    try{
+      const r=await fetch(`https://api.github.com/repos/bip1rw-droid/Respositorio-digital/contents/${carpeta}`);
+      const data=await r.json();
+      if(Array.isArray(data)){
+        setDocsPorCat(p=>({...p,[cat]:data.filter(f=>f.name.toLowerCase().endsWith(".pdf")).map((f,i)=>({id:i,titulo:f.name.replace(".pdf","").replace(/_/g," "),url:f.download_url}))}));
+      } else {
+        setDocsPorCat(p=>({...p,[cat]:[]}));
+      }
+    }catch{setDocsPorCat(p=>({...p,[cat]:[]}));}
+    setCargandoCat(p=>({...p,[cat]:false}));
+  };
+
+  return(<div>
+    <p style={{textAlign:"center",color:"#666",marginBottom:28,fontSize:15}}>Seleccioná una categoría para ver los documentos disponibles.</p>
+    <div style={{display:"flex",flexDirection:"column",gap:12}}>
+      {Object.keys(REPO_CATS).map(cat=>{
+        const abierta=catAbierta===cat;
+        const docs=docsPorCat[cat]||[];
+        const cargando=cargandoCat[cat];
+        const col=CAT_C[cat]||C.verde;
+        return(<div key={cat} style={{borderRadius:16,overflow:"hidden",boxShadow:"0 4px 16px rgba(0,0,0,0.07)",border:`2px solid ${abierta?col:"transparent"}`,transition:"border 0.2s"}}>
+          <button onClick={()=>abrirCat(cat)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 22px",background:abierta?col:"#fff",border:"none",cursor:"pointer",transition:"background 0.2s"}}>
+            <div style={{display:"flex",alignItems:"center",gap:14}}>
+              <div style={{width:12,height:12,borderRadius:"50%",background:abierta?"#fff":col,flexShrink:0}}/>
+              <span style={{fontWeight:800,fontSize:16,color:abierta?"#fff":C.dark}}>{cat}</span>
+              {docsPorCat[cat]!==undefined&&<span style={{background:abierta?"rgba(255,255,255,0.25)":col+"22",color:abierta?"#fff":col,borderRadius:20,padding:"2px 10px",fontSize:12,fontWeight:700}}>{docs.length} doc{docs.length!==1?"s":""}</span>}
+            </div>
+            <span style={{color:abierta?"#fff":col,fontSize:22,display:"inline-block",transform:abierta?"rotate(180deg)":"rotate(0deg)",transition:"transform 0.3s"}}>▾</span>
+          </button>
+          {abierta&&(<div style={{background:"#fafafa",padding:"16px 20px"}}>
+            {cargando&&<div style={{textAlign:"center",padding:24,color:"#888"}}>⏳ Cargando documentos...</div>}
+            {!cargando&&docs.length===0&&(<div style={{textAlign:"center",padding:24,color:"#aaa"}}><div style={{fontSize:32,marginBottom:8}}>📂</div><div style={{fontSize:14}}>No hay documentos en esta categoría todavía.</div><div style={{fontSize:12,marginTop:6}}>Subí PDFs a la carpeta <strong>{REPO_CATS[cat]}</strong> en GitHub</div></div>)}
+            {!cargando&&docs.length>0&&!docActivo&&(<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:12}}>
+              {docs.map(doc=>(<div key={doc.id} style={{background:"#fff",borderRadius:12,padding:16,boxShadow:"0 2px 10px rgba(0,0,0,0.06)",borderLeft:`4px solid ${col}`,transition:"transform 0.2s"}} onMouseEnter={e=>e.currentTarget.style.transform="translateY(-3px)"} onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}>
+                <div style={{display:"flex",gap:10,alignItems:"flex-start",marginBottom:10}}><span style={{fontSize:28,flexShrink:0}}>📄</span><div style={{fontWeight:700,fontSize:14,color:C.dark,lineHeight:1.4}}>{doc.titulo}</div></div>
+                <div style={{display:"flex",gap:8}}>
+                  <button onClick={()=>setDocActivo(doc)} style={{flex:1,background:col,color:"#fff",border:"none",borderRadius:8,padding:"8px",fontWeight:700,fontSize:12,cursor:"pointer"}}>👁 Ver</button>
+                  <a href={doc.url} download target="_blank" rel="noopener noreferrer" style={{flex:1,background:col+"22",color:col,borderRadius:8,padding:"8px",fontWeight:700,fontSize:12,textDecoration:"none",textAlign:"center",display:"flex",alignItems:"center",justifyContent:"center"}}>⬇ Descargar</a>
+                </div>
+              </div>))}
+            </div>)}
+            {docActivo&&(<div style={{background:"#fff",borderRadius:12,overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,0.1)"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10,padding:"14px 18px",background:col,color:"#fff"}}>
+                <div style={{fontWeight:800,fontSize:14}}>{docActivo.titulo}</div>
+                <div style={{display:"flex",gap:8}}>
+                  <a href={docActivo.url} download target="_blank" rel="noopener noreferrer" style={{background:"rgba(255,255,255,0.2)",color:"#fff",borderRadius:8,padding:"7px 14px",fontWeight:700,fontSize:12,textDecoration:"none"}}>⬇ Descargar</a>
+                  <button onClick={()=>setDocActivo(null)} style={{background:"rgba(255,255,255,0.2)",color:"#fff",border:"none",borderRadius:8,padding:"7px 14px",fontWeight:700,fontSize:12,cursor:"pointer"}}>✕ Cerrar</button>
+                </div>
+              </div>
+              <iframe src={`https://docs.google.com/viewer?url=${encodeURIComponent(docActivo.url)}&embedded=true`} title={docActivo.titulo} style={{width:"100%",height:580,border:"none",display:"block"}}/>
+            </div>)}
+          </div>)}
+        </div>);
+      })}
+    </div>
+  </div>);
+}
+
+function RecursosWeb({recursos,onAdmin}){
+  const [cat,setCat]=useState("Todas");
+  const filtrados=cat==="Todas"?recursos:recursos.filter(r=>r.categoria===cat);
+  return(<div>
+    <p style={{textAlign:"center",color:"#666",marginBottom:20,fontSize:15}}>Links a plataformas, portales y sitios de referencia para la comunidad docente.</p>
+    <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center",marginBottom:28}}>{RCATS.map(c=>{const col=RCAT_C[c]||C.celeste;return(<button key={c} onClick={()=>setCat(c)} style={{background:cat===c?col:"#fff",color:cat===c?"#fff":"#555",border:`2px solid ${col}`,borderRadius:30,padding:"6px 14px",fontWeight:700,fontSize:12,cursor:"pointer"}}>{c}</button>);})}</div>
+    {filtrados.length===0&&<div style={{textAlign:"center",padding:40,color:"#aaa"}}>No hay recursos en esta categoría.</div>}
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:16}}>
+      {filtrados.map(r=>{const col=RCAT_C[r.categoria]||C.celeste;return(<a key={r.id} href={r.url} target="_blank" rel="noopener noreferrer" style={{background:"#fff",borderRadius:16,padding:20,boxShadow:"0 4px 16px rgba(0,0,0,0.07)",borderLeft:`4px solid ${col}`,textDecoration:"none",display:"block",transition:"transform 0.2s"}} onMouseEnter={e=>e.currentTarget.style.transform="translateY(-4px)"} onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10,marginBottom:10}}><span style={{fontSize:32}}>🌐</span><span style={{background:col+"22",color:col,fontSize:11,fontWeight:700,borderRadius:20,padding:"3px 10px",textAlign:"right",lineHeight:1.4}}>{r.categoria}</span></div><div style={{fontWeight:800,fontSize:15,color:C.dark,marginBottom:6}}>{r.titulo}</div><div style={{fontSize:13,color:"#777",lineHeight:1.5,marginBottom:12}}>{r.desc}</div><div style={{display:"inline-flex",alignItems:"center",gap:6,background:col,color:"#fff",borderRadius:20,padding:"6px 14px",fontSize:12,fontWeight:700}}>Visitar sitio →</div></a>);})}
+    </div>
+    <div style={{textAlign:"center",marginTop:28}}><button onClick={onAdmin} style={{background:"transparent",border:`2px solid ${C.celeste}`,color:C.celeste,borderRadius:30,padding:"10px 26px",fontWeight:700,fontSize:13,cursor:"pointer"}} onMouseEnter={e=>{e.currentTarget.style.background=C.celeste;e.currentTarget.style.color="#fff";}} onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=C.celeste;}}>🔐 Administrar recursos</button></div>
+  </div>);
+}
+function App(){
+  const [equipo,setEquipo]=useState(EQUIPO_INIT);
+  const [eventos,setEventos]=useState(ordenarEventos(EVENTOS_INIT));
+  const [inc,setInc]=useState(INC_INIT);
+  const [recursos,setRecursos]=useState(RECURSOS_INIT);
+  const [adminEquipo,setAdminEquipo]=useState(false);
+  const [adminEventos,setAdminEventos]=useState(false);
+  const [adminInc,setAdminInc]=useState(false);
+  const [adminRecursos,setAdminRecursos]=useState(false);
+  const [formOpen,setFormOpen]=useState(false);
+  const [listo,setListo]=useState(false);
+
+  useEffect(()=>{
+    Promise.all([fbLeer("equipo"),fbLeer("eventos"),fbLeer("inc"),fbLeer("recursos")]).then(([e,ev,i,r])=>{
+      if(e?.lista)setEquipo(e.lista);
+      if(ev?.lista)setEventos(ordenarEventos(ev.lista));
+      if(i?.lista)setInc(i.lista);
+      if(r?.lista)setRecursos(r.lista);
+      setListo(true);
+    });
+  },[]);
+
+  const guardarEquipo=l=>{setEquipo(l);setAdminEquipo(false);fbGuardar("equipo",{lista:l});};
+  const guardarEventos=l=>{setEventos(l);setAdminEventos(false);fbGuardar("eventos",{lista:l});};
+  const guardarInc=l=>{setInc(l);setAdminInc(false);fbGuardar("inc",{lista:l});};
+  const guardarRecursos=l=>{setRecursos(l);setAdminRecursos(false);fbGuardar("recursos",{lista:l});};
+
+  if(!listo)return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#1a1a2e",flexDirection:"column",gap:16}}><Logo size={80}/><div style={{color:"#fff",fontWeight:700,fontSize:18,marginTop:8}}>Cargando...</div></div>);
+  const scrollTo=id=>document.getElementById(id.toLowerCase())?.scrollIntoView({behavior:"smooth"});
+  return(<div style={{fontFamily:"'Segoe UI',sans-serif",color:C.dark,overflowX:"hidden"}}>
+    <nav style={{position:"fixed",top:0,left:0,right:0,zIndex:100,background:"rgba(255,255,255,0.97)",boxShadow:"0 2px 16px rgba(0,0,0,0.08)",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 20px",backdropFilter:"blur(8px)"}}>
+      <div style={{display:"flex",alignItems:"center",gap:10}}><Logo size={42}/><div><div style={{fontWeight:900,fontSize:16,color:C.magenta,lineHeight:1}}>BP1</div><div style={{fontSize:9,color:"#888",letterSpacing:1}}>RAWSON</div></div></div>
+      <div style={{display:"flex",gap:1,flexWrap:"wrap"}}>{NAV.map(l=><button key={l} onClick={()=>scrollTo(l)} style={{background:"none",border:"none",cursor:"pointer",padding:"5px 8px",borderRadius:20,fontWeight:600,fontSize:11,color:"#555"}} onMouseEnter={e=>e.target.style.color=C.magenta} onMouseLeave={e=>e.target.style.color="#555"}>{l}</button>)}</div>
+    </nav>
+    <section id="inicio" style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:`linear-gradient(135deg,#1a1a2e 0%,#2d1b4e 50%,#1a2a3e 100%)`,position:"relative",overflow:"hidden",paddingTop:80,textAlign:"center"}}>
+      {[{c:C.magenta,t:"-60px",l:"-60px",s:220},{c:C.celeste,b:"-40px",r:"-40px",s:180},{c:C.amarillo,t:"40%",l:"10%",s:100},{c:C.naranja,t:"20%",r:"8%",s:80},{c:C.verde,b:"10%",l:"20%",s:120}].map((b,i)=>(<div key={i} style={{position:"absolute",width:b.s,height:b.s,borderRadius:"50%",background:b.c,opacity:0.18,filter:"blur(40px)",top:b.t,left:b.l,right:b.r,bottom:b.b}}/>))}
+      <div style={{position:"relative",zIndex:1,padding:"0 20px"}}>
+        <div style={{marginBottom:20,display:"flex",justifyContent:"center"}}><Logo size={100}/></div>
+        <div style={{display:"inline-flex",alignItems:"center",gap:8,background:"rgba(255,255,255,0.08)",borderRadius:30,padding:"6px 18px",marginBottom:16,border:"1px solid rgba(255,255,255,0.15)"}}><span style={{fontSize:14,color:"rgba(255,255,255,0.8)"}}>📚 Biblioteca Pedagógica · Rawson, Chubut</span></div>
+        <h1 style={{fontSize:"clamp(24px,5vw,52px)",fontWeight:900,color:"#fff",margin:"0 0 8px",lineHeight:1.1}}>Biblioteca Pedagógica N° 1</h1>
+        <h2 style={{fontSize:"clamp(20px,4vw,42px)",fontWeight:900,margin:"0 0 16px",background:`linear-gradient(90deg,${C.magenta},${C.celeste})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>"Pueblo de Rawson"</h2>
+        <p style={{fontSize:17,color:"rgba(255,255,255,0.75)",maxWidth:520,margin:"0 auto 36px",lineHeight:1.6}}>Un espacio de conocimiento, cultura y comunidad para docentes, estudiantes y familias de Rawson.</p>
+        <div style={{display:"flex",gap:14,justifyContent:"center",flexWrap:"wrap"}}>
+          <button onClick={()=>scrollTo("Novedades")} style={{background:C.magenta,color:"#fff",border:"none",borderRadius:30,padding:"14px 30px",fontWeight:700,fontSize:15,cursor:"pointer",boxShadow:`0 4px 20px ${C.magenta}55`}}>Ver novedades</button>
+          <button onClick={()=>scrollTo("Contacto")} style={{background:"transparent",color:"#fff",border:"2px solid rgba(255,255,255,0.5)",borderRadius:30,padding:"14px 30px",fontWeight:700,fontSize:15,cursor:"pointer"}}>Contactarnos</button>
+        </div>
+        <div style={{display:"flex",gap:30,justifyContent:"center",marginTop:56,flexWrap:"wrap"}}>{[["9.000+","Libros","📗"],["44","Años","⭐"],["Rawson","Chubut","📍"]].map(([n,l,e])=>(<div key={l} style={{textAlign:"center"}}><div style={{fontSize:26,fontWeight:900,color:"#fff"}}>{e} {n}</div><div style={{fontSize:11,color:"rgba(255,255,255,0.6)",letterSpacing:1}}>{l.toUpperCase()}</div></div>))}</div>
+      </div>
+    </section>
+    <Section id="nosotros" bg={C.light}>
+      <Title text="Sobre Nosotros" color={C.magenta}/>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:24}}>
+        {[{icon:"🏛️",titulo:"Nuestra Historia",color:C.celeste,desc:'La Biblioteca Pedagógica N° 1 "Pueblo de Rawson" fue creada el 23 de marzo de 1982. En 1983 se trasladó a su sede actual en Alejandro Maíz 110 y, en 2011, adoptó oficialmente el nombre elegido por la comunidad.'},{icon:"🎯",titulo:"Nuestra Misión",color:C.naranja,desc:"Apoyar a los docentes en su perfeccionamiento y capacitación permanente, organizando y difundiendo recursos bibliográficos disponibles a todos los usuarios interesados en la problemática educativa."},{icon:"✨",titulo:"Nuestros Servicios",color:C.verde,desc:"Préstamo en sala y a domicilio, préstamo interbibliotecario, referencia especializada, catálogo en línea, renovación por WhatsApp, sala de estudio, computadoras con internet, WiFi y valijas viajeras."}].map(card=>(<div key={card.titulo} style={{background:"#fff",borderRadius:16,padding:28,boxShadow:"0 4px 20px rgba(0,0,0,0.06)",borderTop:`4px solid ${card.color}`,transition:"transform 0.2s"}} onMouseEnter={e=>e.currentTarget.style.transform="translateY(-4px)"} onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}><div style={{fontSize:36,marginBottom:12}}>{card.icon}</div><h3 style={{color:card.color,fontWeight:800,marginBottom:10}}>{card.titulo}</h3><p style={{color:"#555",lineHeight:1.7,margin:0,fontSize:14}}>{card.desc}</p></div>))}
+      </div>
+    </Section>
+    <Section id="novedades">
+      <Title text="Novedades" color={C.celeste}/>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:20}}>
+        {NOTICIAS.map(n=>(<div key={n.id} style={{borderRadius:16,overflow:"hidden",boxShadow:"0 4px 16px rgba(0,0,0,0.08)",transition:"transform 0.2s"}} onMouseEnter={e=>e.currentTarget.style.transform="translateY(-6px)"} onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}><div style={{background:n.color,height:8}}/><div style={{padding:20,background:"#fff"}}><div style={{fontSize:32,marginBottom:8}}>{n.icon}</div><span style={{fontSize:11,background:n.color+"22",color:n.color,borderRadius:20,padding:"2px 10px",fontWeight:700}}>{n.fecha}</span><h3 style={{fontWeight:800,margin:"10px 0 8px",fontSize:15}}>{n.titulo}</h3><p style={{color:"#666",fontSize:13,lineHeight:1.6,margin:0}}>{n.desc}</p></div></div>))}
+      </div>
+    </Section>
+    <Section id="galería" bg={C.light}><Title text="Galería" color={C.naranja}/><GaleriaSection/></Section>
+    <Section id="agenda">
+      <Title text="Agenda de Eventos" color={C.verde}/>
+      <div style={{display:"flex",flexDirection:"column",gap:14}}>
+        {eventos.map(ev=>(<div key={ev.id} style={{display:"flex",alignItems:"center",gap:16,background:"#fff",borderRadius:14,padding:"16px 20px",boxShadow:"0 4px 14px rgba(0,0,0,0.07)",borderLeft:`5px solid ${ev.color}`,transition:"transform 0.2s"}} onMouseEnter={e=>e.currentTarget.style.transform="translateX(6px)"} onMouseLeave={e=>e.currentTarget.style.transform="translateX(0)"}><div style={{background:ev.color,color:"#fff",borderRadius:12,padding:"8px 14px",textAlign:"center",minWidth:56,fontWeight:900,flexShrink:0}}><div style={{fontSize:16}}>{ev.dia}</div><div style={{fontSize:11,opacity:0.85}}>{ev.mes}</div></div><div style={{flex:1}}><div style={{fontWeight:700,fontSize:15}}>{ev.titulo}</div><div style={{fontSize:12,color:"#888",marginTop:3}}>{ev.hora&&`🕐 ${ev.hora}`}{ev.hora&&ev.lugar?" · ":""}{ev.lugar&&`📍 ${ev.lugar}`}</div></div></div>))}
+      </div>
+      <div style={{textAlign:"center",marginTop:24}}><button onClick={()=>setAdminEventos(true)} style={{background:"transparent",border:`2px solid ${C.verde}`,color:C.verde,borderRadius:30,padding:"10px 26px",fontWeight:700,fontSize:13,cursor:"pointer"}} onMouseEnter={e=>{e.currentTarget.style.background=C.verde;e.currentTarget.style.color="#fff";}} onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=C.verde;}}>🔐 Administrar agenda</button></div>
+    </Section>
+    <Section id="equipo" bg={C.light}>
+      <Title text="Nuestro Equipo" color={C.magenta}/>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:20}}>
+        {equipo.map(p=>(<div key={p.id} style={{background:"#fff",borderRadius:16,padding:24,textAlign:"center",boxShadow:"0 4px 16px rgba(0,0,0,0.07)",transition:"transform 0.2s"}} onMouseEnter={e=>e.currentTarget.style.transform="translateY(-6px)"} onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}><div style={{width:64,height:64,borderRadius:"50%",background:p.color,color:"#fff",fontSize:26,fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px",boxShadow:`0 6px 20px ${p.color}55`}}>{p.nombre[0]}</div><div style={{fontWeight:800,fontSize:14}}>{p.nombre}</div><div style={{color:p.color,fontWeight:600,fontSize:12,marginTop:4}}>{p.rol}</div></div>))}
+      </div>
+      <div style={{textAlign:"center",marginTop:32}}><button onClick={()=>setAdminEquipo(true)} style={{background:"transparent",border:`2px solid ${C.magenta}`,color:C.magenta,borderRadius:30,padding:"10px 26px",fontWeight:700,fontSize:13,cursor:"pointer"}} onMouseEnter={e=>{e.currentTarget.style.background=C.magenta;e.currentTarget.style.color="#fff";}} onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=C.magenta;}}>🔐 Administrar equipo</button></div>
+    </Section>
+    <Section id="catálogo">
+      <Title text="Catálogo Bibliográfico" color={C.celeste}/>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:24,alignItems:"start"}}>
+        <div style={{background:C.light,borderRadius:20,padding:32,textAlign:"center",boxShadow:"0 4px 20px rgba(0,0,0,0.07)"}}><div style={{fontSize:64,marginBottom:16}}>📚</div><h3 style={{color:C.celeste,fontWeight:900,fontSize:22,marginBottom:12}}>Catálogo BP1</h3><p style={{color:"#666",lineHeight:1.7,fontSize:14,marginBottom:24}}>Accedé al catálogo bibliográfico completo. Consultá títulos disponibles, autores y materias.</p><a href="https://catalogobp1.netlify.app/" target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:10,background:C.celeste,color:"#fff",textDecoration:"none",borderRadius:30,padding:"14px 28px",fontWeight:700,fontSize:15,boxShadow:`0 4px 20px ${C.celeste}55`}}>📖 Ver catálogo completo</a></div>
+        <div style={{display:"flex",flexDirection:"column",gap:14}}>{[{icon:"🔍",titulo:"Búsqueda por título",desc:"Encontrá rápidamente cualquier libro por su nombre.",color:C.celeste},{icon:"✍️",titulo:"Búsqueda por autor",desc:"Explorá obras de un autor específico.",color:C.naranja},{icon:"📂",titulo:"Búsqueda por materia",desc:"Filtrá por área pedagógica, nivel educativo o disciplina.",color:C.verde}].map(f=>(<div key={f.titulo} style={{display:"flex",gap:14,background:"#fff",borderRadius:14,padding:"16px 18px",boxShadow:"0 2px 12px rgba(0,0,0,0.06)",borderLeft:`4px solid ${f.color}`}}><span style={{fontSize:28}}>{f.icon}</span><div><div style={{fontWeight:700,fontSize:14,color:C.dark}}>{f.titulo}</div><div style={{fontSize:13,color:"#777",marginTop:3}}>{f.desc}</div></div></div>))}</div>
+      </div>
+      <div style={{marginTop:40}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20,flexWrap:"wrap",gap:12}}>
+          <div><h3 style={{color:C.magenta,fontWeight:900,fontSize:22,margin:0}}>🆕 Nuevas Incorporaciones</h3><p style={{color:"#888",fontSize:13,margin:"4px 0 0"}}>Títulos recientemente sumados al acervo</p></div>
+          <button onClick={()=>setAdminInc(true)} style={{background:"transparent",border:`2px solid ${C.magenta}`,color:C.magenta,borderRadius:30,padding:"8px 20px",fontWeight:700,fontSize:13,cursor:"pointer"}} onMouseEnter={e=>{e.currentTarget.style.background=C.magenta;e.currentTarget.style.color="#fff";}} onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=C.magenta;}}>🔐 Administrar</button>
+        </div>
+        {inc.length===0?<div style={{textAlign:"center",padding:40,background:"#fff",borderRadius:16,color:"#aaa"}}>Aún no hay títulos cargados.</div>:(<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:16}}>{inc.map(item=>(<div key={item.id} style={{background:"#fff",borderRadius:16,padding:20,boxShadow:"0 4px 16px rgba(0,0,0,0.07)",borderTop:`4px solid ${C.magenta}`,transition:"transform 0.2s"}} onMouseEnter={e=>e.currentTarget.style.transform="translateY(-4px)"} onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}><span style={{fontSize:32}}>📗</span><span style={{background:C.celeste+"22",color:C.celeste,fontSize:11,fontWeight:700,borderRadius:20,padding:"3px 10px"}}>{item.area}</span></div><div style={{fontWeight:800,fontSize:14,color:C.dark,marginBottom:6,lineHeight:1.4}}>{item.titulo}</div><div style={{fontSize:12,color:"#888"}}>✍️ {item.autor}</div><div style={{fontSize:12,color:"#aaa",marginTop:2}}>📅 {item.anio}</div></div>))}</div>)}
+      </div>
+    </Section>
+    <Section id="repositorio" bg={C.light}><Title text="Repositorio Digital" color={C.verde}/><Repositorio/></Section>
+    <Section id="recursos web"><Title text="Recursos Web" color={C.celeste}/><RecursosWeb recursos={recursos} onAdmin={()=>setAdminRecursos(true)}/></Section>
+    <Section id="contacto">
+      <Title text="Contacto" color={C.celeste}/>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:24}}>
+        <div style={{background:C.light,borderRadius:16,padding:28}}><h3 style={{color:C.magenta,fontWeight:800,marginBottom:20}}>📍 Información</h3>{[["📍","Dirección","Alejandro Maíz 110, Rawson, Chubut"],["🕐","Horario","Lunes a Viernes · 8:00 a 20:00 hs"],["📞","Teléfono","280 448-2914"],["📱","WhatsApp","280 422-0877"],["✉️","Email","bp1usuarios@gmail.com"]].map(([ico,lbl,val])=>(<div key={lbl} style={{display:"flex",gap:12,marginBottom:16,alignItems:"flex-start"}}><span style={{fontSize:20}}>{ico}</span><div><div style={{fontSize:11,color:"#888",fontWeight:700,letterSpacing:0.5}}>{lbl.toUpperCase()}</div><div style={{fontSize:14,fontWeight:600}}>{val}</div></div></div>))}</div>
+        <div style={{background:C.light,borderRadius:16,padding:28}}><h3 style={{color:C.magenta,fontWeight:800,marginBottom:20}}>🌐 Redes y contacto directo</h3><div style={{display:"flex",flexDirection:"column",gap:12}}>{[{label:"WhatsApp",icon:"💬",color:"#25D366",href:"https://wa.me/542804220877",desc:"Chateá con nosotros"},{label:"Email",icon:"✉️",color:C.naranja,href:"mailto:bp1usuarios@gmail.com",desc:"Escribinos un correo"},{label:"Facebook",icon:"📘",color:"#1877F2",href:"https://www.facebook.com/profile.php?id=100087511205917&locale=es_LA",desc:"Seguinos en Facebook"},{label:"Instagram",icon:"📸",color:C.magenta,href:"https://www.instagram.com/bip1rw/",desc:"Seguinos en Instagram"}].map(r=>(<a key={r.label} href={r.href} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",gap:14,background:"#fff",borderRadius:12,padding:"14px 18px",textDecoration:"none",boxShadow:"0 2px 10px rgba(0,0,0,0.07)",borderLeft:`4px solid ${r.color}`,transition:"transform 0.2s"}} onMouseEnter={e=>e.currentTarget.style.transform="translateX(4px)"} onMouseLeave={e=>e.currentTarget.style.transform="translateX(0)"}><span style={{fontSize:26}}>{r.icon}</span><div><div style={{fontWeight:700,color:C.dark,fontSize:14}}>{r.label}</div><div style={{fontSize:12,color:"#888"}}>{r.desc}</div></div><span style={{marginLeft:"auto",color:r.color,fontWeight:700,fontSize:18}}>→</span></a>))}</div></div>
+      </div>
+    </Section>
+    <footer style={{background:`linear-gradient(135deg,#1a1a2e,#2d1b4e)`,color:"rgba(255,255,255,0.8)",textAlign:"center",padding:"30px 20px"}}>
+      <div style={{display:"flex",justifyContent:"center",marginBottom:14}}><Logo size={52}/></div>
+      <div style={{fontWeight:800,fontSize:16,color:"#fff",marginBottom:4}}>Biblioteca Pedagógica N° 1 "Pueblo de Rawson"</div>
+      <div style={{fontSize:13}}>Alejandro Maíz 110 · Rawson · Chubut · Patagonia Argentina</div>
+      <div style={{fontSize:12,marginTop:8,opacity:0.5}}>© 2026 BP1 · Todos los derechos reservados</div>
+    </footer>
+    <a href="https://catalogobp1.netlify.app/" target="_blank" rel="noopener noreferrer" style={{position:"fixed",bottom:28,right:28,zIndex:200,display:"flex",alignItems:"center",gap:10,background:C.celeste,color:"#fff",textDecoration:"none",borderRadius:50,padding:"14px 22px",fontWeight:800,fontSize:15,boxShadow:`0 6px 28px ${C.celeste}88`}}><span style={{fontSize:22}}>📚</span><span>Ver Catálogo</span></a>
+    <button onClick={()=>setFormOpen(true)} style={{position:"fixed",bottom:28,left:28,zIndex:200,display:"flex",alignItems:"center",gap:10,background:C.verde,color:"#fff",border:"none",borderRadius:50,padding:"14px 22px",fontWeight:800,fontSize:15,cursor:"pointer",boxShadow:`0 6px 28px ${C.verde}88`}}><span style={{fontSize:22}}>📝</span><span>Formulario</span></button>
+    {formOpen&&(<div style={{position:"fixed",inset:0,zIndex:300,display:"flex",alignItems:"flex-end",justifyContent:"center",background:"rgba(0,0,0,0.5)"}} onClick={e=>{if(e.target===e.currentTarget)setFormOpen(false);}}>
+      <div style={{background:"#fff",borderRadius:"24px 24px 0 0",width:"100%",maxWidth:700,maxHeight:"90vh",display:"flex",flexDirection:"column",boxShadow:"0 -8px 40px rgba(0,0,0,0.2)",animation:"slideUp 0.3s ease"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"18px 24px",background:`linear-gradient(135deg,${C.verde},${C.celeste})`,borderRadius:"24px 24px 0 0"}}><div><div style={{color:"#fff",fontWeight:900,fontSize:17}}>📝 Formulario BP1</div><div style={{color:"rgba(255,255,255,0.8)",fontSize:13}}>Biblioteca Pedagógica N° 1 "Pueblo de Rawson"</div></div><button onClick={()=>setFormOpen(false)} style={{background:"rgba(255,255,255,0.2)",border:"none",color:"#fff",borderRadius:"50%",width:36,height:36,fontSize:20,fontWeight:700,cursor:"pointer"}}>×</button></div>
+        <iframe src="https://forms.gle/o4rW2KMEeuHv2a1r9" title="Formulario BP1" style={{flex:1,border:"none",minHeight:520}} allowFullScreen/>
+      </div>
+    </div>)}
+    {adminEquipo&&<AdminEquipo equipo={equipo} onClose={()=>setAdminEquipo(false)} onSave={guardarEquipo}/>}
+    {adminEventos&&<AdminEventos eventos={eventos} onClose={()=>setAdminEventos(false)} onSave={guardarEventos}/>}
+    {adminInc&&<AdminInc lista={inc} onClose={()=>setAdminInc(false)} onSave={guardarInc}/>}
+    {adminRecursos&&<AdminRecursos lista={recursos} onClose={()=>setAdminRecursos(false)} onSave={guardarRecursos}/>}
+  </div>);
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
